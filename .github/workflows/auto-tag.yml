@@ -1,16 +1,16 @@
 name: Auto.Tag
 
 on:
-- push
+  push
+
+permissions:
+  contents: write
 
 jobs:
   tag:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version:
-        - 12
     steps:
+    - uses: actions/checkout@v2
     - uses: phish108/autotag-action@v1.1.55
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN}}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
