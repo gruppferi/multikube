@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/multikube.png" width="200">
+  <img src="assets/images/multikube_white.png" width="200">
 </p>
 
 # Multikube Tool
