@@ -1,9 +1,6 @@
 name: Build and Release .deb Package
-
 on:
-  push:
-    tags:
-      - '*'
+  push
 
 jobs:
   build:
