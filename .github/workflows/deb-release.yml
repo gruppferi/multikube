@@ -1,0 +1,60 @@
+name: Build and Release .deb Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+
+      # Install system dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y dpkg curl unzip python3-venv
+
+      # Update version in control file and build .deb package
+      - name: Build .deb package
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "Updating control file with version: $VERSION"
+          sed -i "s/^Version: .*/Version: $VERSION/" multikube/DEBIAN/control
+          dpkg-deb --build multikube "multikube_${VERSION}.deb"
+
+      # Upload the built package to the GitHub release
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: "./multikube_${VERSION}.deb"
+          asset_name: "multikube_${VERSION}.deb"
+          asset_content_type: application/octet-stream
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Create GitHub Release
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false

@@ -1,0 +1,7 @@
+Package: multikube
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Ferdows Shahryar <s.ferdows@hotmail.com>
+Description: A multi-cluster kubectl command execution tool for AWS EKS clusters
