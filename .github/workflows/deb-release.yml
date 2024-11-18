@@ -36,7 +36,7 @@ jobs:
           dpkg-deb --build . "multikube_${VERSION}.deb"
 
       - name: Upload .deb package to workspace
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: multikube_${{ env.VERSION }}.deb
           path: multikube_${{ env.VERSION }}.deb
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download .deb package from workspace
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: multikube_${{ needs.build.outputs.VERSION }}.deb
           path: .
