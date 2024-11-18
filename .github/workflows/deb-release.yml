@@ -24,9 +24,6 @@ jobs:
           sudo apt update
           sudo apt install -y dpkg curl unzip python3-venv
 
-      - name: Print GITHUB_REF
-        run: echo "GITHUB_REF: $GITHUB_REF"
-
       - name: Extract VERSION
         run: |
           VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
