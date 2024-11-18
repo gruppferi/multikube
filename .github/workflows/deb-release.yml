@@ -6,15 +6,16 @@ on:
       - main
 
 permissions:
-  contents: write  # This line ensures you have the right permissions for the job
+  contents: write  # Ensures permission to handle repository contents
 
 jobs:
   auto-tag-and-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Ensures all tags are fetched
 
       - name: Auto Tag
         uses: phish108/autotag-action@v1.1.55
@@ -45,6 +46,10 @@ jobs:
           asset_path: ./multikube_${{ env.NEW_VERSION }}.deb
           asset_name: multikube_${{ env.NEW_VERSION }}.deb
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Make sure this is included
 
       - name: Push Tags
         run: git push --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Make sure this is included
