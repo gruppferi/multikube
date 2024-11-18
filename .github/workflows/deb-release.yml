@@ -3,8 +3,7 @@ name: Build and Release .deb Package
 on:
   push:
     tags:
-      - '*'  # This will trigger the workflow for any tag
-
+      - '*'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Fetch all history since dealing with tags
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
