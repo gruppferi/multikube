@@ -2,8 +2,8 @@ name: Build and Release .deb Package
 
 on:
   push:
-    tags:
-      - '*'
+  workflow_dispatch:  # Allow manual triggering
+
 jobs:
   build:
     runs-on: ubuntu-latest
