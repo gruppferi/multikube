@@ -2,7 +2,9 @@ name: Build and Release .deb Package
 
 on:
   push:
-  workflow_dispatch:  # Allow manual triggering
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,31 +25,32 @@ jobs:
           sudo apt update
           sudo apt install -y dpkg curl unzip python3-venv
 
-      - name: Extract VERSION
+      - name: Extract VERSION from tag
         run: |
           VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
-          echo "Extracted VERSION: $VERSION"
-
-      - name: List directory contents
-        run: ls -lR multikube/
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build .deb package
         run: |
-          sed -i "s@^Version: .*@Version: $VERSION@" multikube/DEBIAN/control
-          dpkg-deb --build multikube "multikube_${VERSION}.deb"
+          sed -i "s@^Version: .*@Version: $VERSION@" DEBIAN/control
+          dpkg-deb --build . "multikube_${VERSION}.deb"
 
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      - name: Upload .deb package to workspace
+        uses: actions/upload-artifact@v2
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: "./multikube_${VERSION}.deb"
-          asset_name: "multikube_${VERSION}.deb"
-          asset_content_type: application/octet-stream
+          name: multikube_${{ env.VERSION }}.deb
+          path: multikube_${{ env.VERSION }}.deb
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Download .deb package from workspace
+        uses: actions/download-artifact@v2
+        with:
+          name: multikube_${{ needs.build.outputs.VERSION }}.deb
+          path: .
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -55,5 +58,14 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
+          body: 'New release of multikube'
           draft: false
           prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./multikube_${{ needs.build.outputs.VERSION }}.deb
+          asset_name: multikube_${{ needs.build.outputs.VERSION }}.deb
+          asset_content_type: application/octet-stream
