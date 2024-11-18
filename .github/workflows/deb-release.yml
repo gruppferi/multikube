@@ -3,40 +3,35 @@ name: Build and Release .deb Package
 on:
   push:
     tags:
-      - '*'  # Ensure this matches the tag pattern
+      - '*'  # Trigger for any tag
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history since we're dealing with tags
 
-      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.12'
 
-      # Install system dependencies
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y dpkg curl unzip python3-venv
 
-      # Update version in control file and build .deb package
       - name: Build .deb package
         run: |
-          # Properly extracting VERSION from tag
           VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
           echo "Updating control file with version: $VERSION"
-          # Using different delimiter for sed to avoid conflict with slashes
           sed -i "s@^Version: .*@Version: $VERSION@" multikube/DEBIAN/control
           dpkg-deb --build multikube "multikube_${VERSION}.deb"
 
-      # Upload the built package to the GitHub release
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         with:
@@ -49,9 +44,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Create GitHub Release
       - name: Create GitHub Release
-        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

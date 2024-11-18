@@ -10,7 +10,14 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: phish108/autotag-action@v1.1.55
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Ensure we get all history for tagging
+
+      - name: Auto Tag
+        uses: phish108/autotag-action@v1.1.55
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Tags
+        run: git push --tags
