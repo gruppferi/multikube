@@ -28,23 +28,17 @@ jobs:
           sudo apt install -y dpkg-dev
 
       - name: Extract VERSION from DEBIAN/control
-        id: extract_version
         run: |
           VERSION=$(grep '^Version:' DEBIAN/control | awk '{print $2}')
-          echo "Extracted VERSION: $VERSION"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted VERSION: $VERSION"
 
       - name: Build .deb package
         run: |
           dpkg-deb --build . "multikube_${{ env.VERSION }}.deb"
 
-      - name: Upload .deb package to workspace
-        uses: actions/upload-artifact@v3
-        with:
-          name: multikube_${{ env.VERSION }}.deb
-          path: multikube_${{ env.VERSION }}.deb
-
       - name: Create GitHub Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -54,14 +48,10 @@ jobs:
           body: 'New release of multikube version v${{ env.VERSION }}'
           draft: false
 
-      - name: Download .deb package from workspace
-        uses: actions/download-artifact@v3
-        with:
-          name: multikube_${{ env.VERSION }}.deb
-          path: .
-
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./multikube_${{ env.VERSION }}.deb
