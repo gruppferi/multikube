@@ -10,7 +10,7 @@ permissions:
   contents: write
   actions: read
   packages: write
-
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -48,8 +48,38 @@ jobs:
           name: multikube_${{ steps.extract_version.outputs.version }}.deb
           path: multikube_${{ steps.extract_version.outputs.version }}.deb
 
-  release:
+  prepare_release:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Create Tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tagName = `v${{ needs.build.outputs.version }}`;
+            const ref = `refs/tags/${tagName}`;
+            try {
+              await github.git.getRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: ref
+              });
+            } catch (error) {
+              await github.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: ref,
+                sha: '${{ github.sha }}'
+              });
+            }
+
+  release:
+    needs: prepare_release
     runs-on: ubuntu-latest
     steps:
       - name: Download .deb package from workspace
@@ -63,7 +93,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.sha }}
+          tag_name: v${{ needs.build.outputs.version }}
           release_name: Release multikube ${{ needs.build.outputs.version }}
           body: 'New release of multikube version ${{ needs.build.outputs.version }}'
           draft: false
