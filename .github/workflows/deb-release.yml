@@ -9,11 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -23,32 +23,32 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y dpkg curl unzip python3-venv
+          sudo apt install -y dpkg-dev
 
       - name: Extract VERSION from DEBIAN/control
         id: extract_version
         run: |
-          VERSION=$(grep '^Version:' DEBIAN/control | cut -d ' ' -f 2)
+          VERSION=$(grep '^Version:' DEBIAN/control | awk '{print $2}')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "::set-output name=version::$VERSION"
           echo "Extracted VERSION: $VERSION"
 
       - name: Build .deb package
         run: |
-          dpkg-deb --build . "multikube_${{ env.VERSION }}.deb"
+          dpkg-deb --build . "multikube_${{ steps.extract_version.outputs.version }}.deb"
 
       - name: Upload .deb package to workspace
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
-          name: multikube_${{ env.VERSION }}.deb
-          path: multikube_${{ env.VERSION }}.deb
+          name: multikube_${{ steps.extract_version.outputs.version }}.deb
+          path: multikube_${{ steps.extract_version.outputs.version }}.deb
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download .deb package from workspace
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: multikube_${{ needs.build.outputs.version }}.deb
           path: .
@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.sha }}
-          release_name: Release ${{ needs.build.outputs.version }}
+          release_name: Release multikube ${{ needs.build.outputs.version }}
           body: 'New release of multikube version ${{ needs.build.outputs.version }}'
           draft: false
           prerelease: false
