@@ -1,6 +1,9 @@
 name: Build and Release .deb Package
+
 on:
-  push
+  push:
+    tags:
+      - '*'  # Ensure this matches the tag pattern
 
 jobs:
   build:
@@ -26,9 +29,11 @@ jobs:
       # Update version in control file and build .deb package
       - name: Build .deb package
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
+          # Properly extracting VERSION from tag
+          VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
           echo "Updating control file with version: $VERSION"
-          sed -i "s/^Version: .*/Version: $VERSION/" multikube/DEBIAN/control
+          # Using different delimiter for sed to avoid conflict with slashes
+          sed -i "s@^Version: .*@Version: $VERSION@" multikube/DEBIAN/control
           dpkg-deb --build multikube "multikube_${VERSION}.deb"
 
       # Upload the built package to the GitHub release
