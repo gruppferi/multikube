@@ -23,7 +23,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract the new version
-        id: get_version
         run: echo "NEW_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
       - name: Build .deb package
@@ -31,6 +30,7 @@ jobs:
           dpkg-deb --build . "multikube_${{ env.NEW_VERSION }}.deb"
 
       - name: Create GitHub Release
+        id: create_release  # This ID is used to reference outputs from this step
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +43,7 @@ jobs:
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}  # Correctly referencing the output
           asset_path: ./multikube_${{ env.NEW_VERSION }}.deb
           asset_name: multikube_${{ env.NEW_VERSION }}.deb
           asset_content_type: application/octet-stream
