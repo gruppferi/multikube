@@ -10,7 +10,6 @@ permissions:
   contents: write
   actions: read
   packages: write
-  releases: write
 
 jobs:
   build:
