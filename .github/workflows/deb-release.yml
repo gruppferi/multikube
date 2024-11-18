@@ -25,15 +25,16 @@ jobs:
           sudo apt update
           sudo apt install -y dpkg curl unzip python3-venv
 
-      - name: Extract VERSION from tag
+      - name: Extract VERSION from DEBIAN/control
+        id: extract_version
         run: |
-          VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
+          VERSION=$(grep '^Version:' DEBIAN/control | cut -d ' ' -f 2)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Extracted VERSION: $VERSION"
 
       - name: Build .deb package
         run: |
-          sed -i "s@^Version: .*@Version: $VERSION@" DEBIAN/control
-          dpkg-deb --build . "multikube_${VERSION}.deb"
+          dpkg-deb --build . "multikube_${{ env.VERSION }}.deb"
 
       - name: Upload .deb package to workspace
         uses: actions/upload-artifact@v3
@@ -56,9 +57,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: 'New release of multikube'
+          tag_name: ${{ github.sha }}
+          release_name: Release ${{ needs.build.outputs.VERSION }}
+          body: 'New release of multikube version ${{ needs.build.outputs.VERSION }}'
           draft: false
           prerelease: false
 
