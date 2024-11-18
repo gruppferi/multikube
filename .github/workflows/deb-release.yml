@@ -1,59 +1,52 @@
-name: Build and Release .deb Package
+name: Auto Build and Release with Tagging
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
-  build_and_release:
+  auto-tag-and-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
         with:
-          python-version: '3.12'
+          fetch-depth: 0  # Ensure we get all history for tagging
 
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y dpkg-dev
+      - name: Auto Tag
+        uses: phish108/autotag-action@v1.1.55
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract VERSION from DEBIAN/control
-        run: |
-          VERSION=$(grep '^Version:' DEBIAN/control | awk '{print $2}')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Extracted VERSION: $VERSION"
+      - name: Extract the new version
+        id: get_version
+        run: echo "NEW_VERSION=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
       - name: Build .deb package
         run: |
-          dpkg-deb --build . "multikube_${{ env.VERSION }}.deb"
+          dpkg-deb --build . "multikube_${{ env.NEW_VERSION }}.deb"
 
       - name: Create GitHub Release
-        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.VERSION }}
-          release_name: Release multikube v${{ env.VERSION }}
-          body: 'New release of multikube version v${{ env.VERSION }}'
+          tag_name: ${{ env.NEW_VERSION }}
+          release_name: Release multikube ${{ env.NEW_VERSION }}
+          body: 'New release of multikube version ${{ env.NEW_VERSION }}'
           draft: false
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./multikube_${{ env.VERSION }}.deb
-          asset_name: multikube_${{ env.VERSION }}.deb
+          asset_path: ./multikube_${{ env.NEW_VERSION }}.deb
+          asset_name: multikube_${{ env.NEW_VERSION }}.deb
           asset_content_type: application/octet-stream
+
+      - name: Push Tags
+        run: git push --tags
