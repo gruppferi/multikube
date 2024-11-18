@@ -3,8 +3,7 @@ name: Build and Release .deb Package
 on:
   push:
     tags:
-      - '*'  # Trigger for any tag
-  workflow_dispatch:  # Allow manual triggering
+      - '*'
 
 jobs:
   build:
@@ -13,22 +12,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Fetch all history since we're dealing with tags
+          fetch-depth: 0  # Important for access to all history
 
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.12'
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt update
           sudo apt install -y dpkg curl unzip python3-venv
 
-      - name: Build .deb package
+      - name: Print GITHUB_REF
+        run: echo "GITHUB_REF: $GITHUB_REF"
+
+      - name: Extract VERSION
         run: |
           VERSION=$(echo $GITHUB_REF | sed 's|refs/tags/||')
-          echo "Updating control file with version: $VERSION"
+          echo "Extracted VERSION: $VERSION"
+
+      - name: List directory contents
+        run: ls -lR multikube/
+
+      - name: Build .deb package
+        run: |
           sed -i "s@^Version: .*@Version: $VERSION@" multikube/DEBIAN/control
           dpkg-deb --build multikube "multikube_${VERSION}.deb"
 
